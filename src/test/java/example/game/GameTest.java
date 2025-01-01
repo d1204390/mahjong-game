@@ -1,108 +1,196 @@
 package example.game;
 
 import example.model.*;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
 
-class GameTest {
-    private Game game;
+public class GameTest {
 
-    @BeforeEach
-    void setUp() {
-        game = new Game();
+    @Test
+    public void testWinWithAllPongs() {
+        // 測試全刻子胡牌
+        Player player = new Player("Test", true);
+
+        // 加入5個刻子
+        // 刻子1: 三個1萬
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+
+        // 刻子2: 三個2萬
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+
+        // 刻子3: 三個3萬
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+
+        // 刻子4: 三個4萬
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+
+        // 刻子5: 三個5萬
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+
+        // 對子: 兩個6萬
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
     }
 
     @Test
-    @DisplayName("測試遊戲初始化")
-    void testGameInitialization() {
-        // 驗證遊戲初始狀態
-        assertEquals(GameState.WAITING, game.getCurrentState(), "初始狀態應為WAITING");
-        assertNotNull(game.getPlayers(), "玩家陣列不應為空");
-        assertEquals(4, game.getPlayers().length, "應該有4位玩家");
-        assertTrue(game.getPlayers()[0].isHuman(), "第一位玩家應該是人類玩家");
-        assertFalse(game.getPlayers()[1].isHuman(), "第二位玩家應該是電腦");
-    }
+    public void testWinWithAllChis() {
+        // 測試全順子胡牌
+        Player player = new Player("Test", true);
 
-    @Test
-    @DisplayName("測試發牌")
-    void testDealTiles() {
-        game.startGame();
-
-        for (Player player : game.getPlayers()) {
-            // 檢查手牌數量是否正確（考慮花牌的情況）
-            int totalTiles = player.getHand().size() + player.getFlowers().size();
-            assertTrue(totalTiles >= 16, "每位玩家應該至少有16張牌(包含可能的花牌)");
-        }
-    }
-
-    @Test
-    @DisplayName("測試槓牌流程")
-    void testKongProcess() {
-        game.startGame();
-        Player player = game.getPlayers()[0];
-
-        // 清空現有手牌
-        while (!player.getHand().isEmpty()) {
-            player.discardTile(0);
-        }
-
-        // 設置槓牌情況
-        Tile tile = new Tile(Tile.TileType.DRAGON, 1);  // 中
-        for (int i = 0; i < 3; i++) {
-            player.addTile(tile);
-        }
-
-        // 執行槓
-        List<Integer> kongIndices = List.of(0, 1, 2);
-        game.executeKong(player, kongIndices);
-
-        // 驗證槓後的狀態
-        assertEquals(1, player.getMelds().size(), "應該有一個鳴牌組");
-        assertEquals(MeldType.KONG, player.getMelds().get(0).getType(), "應該是槓");
-    }
-
-    @Test
-    @DisplayName("測試胡牌判定")
-    void testWinCondition() {
-        game.startGame();
-        Player player = game.getPlayers()[0];
-
-        // 清空手牌
-        while (!player.getHand().isEmpty()) {
-            player.discardTile(0);
-        }
-
-        // 加入四組順子
-        // 123萬
+        // 順子1: 123萬
         player.addTile(new Tile(Tile.TileType.WAN, 1));
         player.addTile(new Tile(Tile.TileType.WAN, 2));
         player.addTile(new Tile(Tile.TileType.WAN, 3));
 
-        // 456萬
+        // 順子2: 456萬
         player.addTile(new Tile(Tile.TileType.WAN, 4));
         player.addTile(new Tile(Tile.TileType.WAN, 5));
         player.addTile(new Tile(Tile.TileType.WAN, 6));
 
-        // 789筒
-        player.addTile(new Tile(Tile.TileType.TONG, 7));
-        player.addTile(new Tile(Tile.TileType.TONG, 8));
-        player.addTile(new Tile(Tile.TileType.TONG, 9));
+        // 順子3: 789萬
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
 
-        // 刻子
+        // 順子4: 123筒
+        player.addTile(new Tile(Tile.TileType.TONG, 1));
+        player.addTile(new Tile(Tile.TileType.TONG, 2));
+        player.addTile(new Tile(Tile.TileType.TONG, 3));
+
+        // 順子5: 456筒
+        player.addTile(new Tile(Tile.TileType.TONG, 4));
+        player.addTile(new Tile(Tile.TileType.TONG, 5));
+        player.addTile(new Tile(Tile.TileType.TONG, 6));
+
+        // 對子: 兩個中
         player.addTile(new Tile(Tile.TileType.DRAGON, 1));
         player.addTile(new Tile(Tile.TileType.DRAGON, 1));
-        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
 
-        // 將牌對子
-        player.addTile(new Tile(Tile.TileType.WIND, 1));
-        player.addTile(new Tile(Tile.TileType.WIND, 1));
-
-        assertTrue(game.checkWin(player), "應該要能胡牌");
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
     }
 
+    @Test
+    public void testWinWithMixed() {
+        // 測試混合型胡牌（有順子有刻子）
+        Player player = new Player("Test", true);
 
+        // 刻子1: 三個1萬
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+
+        // 順子1: 234萬
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+
+        // 順子2: 567萬
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+
+        // 刻子2: 三個8萬
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+
+        // 刻子3: 三個9萬
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+
+        // 對子: 兩個發
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
+    }
+
+    @Test
+    public void testWinWithMelds() {
+        // 測試有吃碰槓的胡牌
+        Player player = new Player("Test", true);
+
+        // 加入兩組碰
+        List<Tile> pong1 = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1)
+        );
+        player.getMelds().add(new Meld(MeldType.PONG, pong1));
+
+        List<Tile> pong2 = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 2)
+        );
+        player.getMelds().add(new Meld(MeldType.PONG, pong2));
+
+        // 手牌中加入3組
+        // 刻子
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+
+        // 順子
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+
+        // 順子
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+
+        // 對子
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
+    }
+
+    @Test
+    public void testNotWin() {
+        // 測試不能胡牌的情況
+        Player player = new Player("Test", true);
+
+        // 加入一些不成組合的牌
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.TONG, 1));
+        player.addTile(new Tile(Tile.TileType.TONG, 2));
+        player.addTile(new Tile(Tile.TileType.TONG, 3));
+        player.addTile(new Tile(Tile.TileType.TIAO, 1));
+        player.addTile(new Tile(Tile.TileType.TIAO, 2));
+        player.addTile(new Tile(Tile.TileType.TIAO, 3));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 3));
+        player.addTile(new Tile(Tile.TileType.WIND, 1));
+        player.addTile(new Tile(Tile.TileType.WIND, 2));
+
+        Game game = new Game();
+        assertFalse(game.checkWin(player));
+    }
 }

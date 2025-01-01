@@ -471,50 +471,91 @@ public class Game {
         return players;
     }
 
-    // 檢查玩家是否胡牌
-// 檢查玩家是否胡牌
     public boolean checkWin(Player player) {
-        List<Tile> hand = player.getHand();
-        List<Meld> melds = player.getMelds();
+        // 1. 先算已經有的組數（來自吃、碰、槓）
+        int completeSets = player.getMelds().size();
 
-        // 計算已經成組的順子/刻子數量（來自吃碰槓）
-        int completeSets = melds.size();
+        // 2. 找手牌中的刻子和順子
+        List<Tile> hand = new ArrayList<>(player.getHand());
 
-        // 如果已經有的組合加上手牌不足以構成四組順/刻子加一對，直接返回false
-        if (completeSets * 3 + hand.size() != 17) {
-            return false;
-        }
+        // 先找刻子
+        boolean foundTriplet;
+        do {
+            foundTriplet = false;
+            // 每次找到刻子後重新開始，避免索引越界
+            for (int i = 0; i < hand.size() - 2 && !foundTriplet; i++) {
+                for (int j = i + 1; j < hand.size() - 1 && !foundTriplet; j++) {
+                    for (int k = j + 1; k < hand.size(); k++) {
+                        Tile t1 = hand.get(i);
+                        Tile t2 = hand.get(j);
+                        Tile t3 = hand.get(k);
 
-        // 還需要找到的順子/刻子數量
-        int remainingSets = 4 - completeSets;
-
-        // 複製一個新的手牌列表來進行檢查
-        List<Tile> checkHand = new ArrayList<>(hand);
-        checkHand.sort((t1, t2) -> {
-            if (t1.getType() != t2.getType()) {
-                return t1.getType().ordinal() - t2.getType().ordinal();
-            }
-            return t1.getNumber() - t2.getNumber();
-        });
-
-        // 尋找所有可能的對子（將）
-        for (int i = 0; i < checkHand.size() - 1; i++) {
-            if (isSameTile(checkHand.get(i), checkHand.get(i + 1))) {
-                // 找到對子，移除這兩張牌
-                List<Tile> remainingTiles = new ArrayList<>(checkHand);
-                remainingTiles.remove(i);
-                remainingTiles.remove(i);
-
-                // 檢查剩餘的牌是否能組成所需的順子或刻子
-                if (canFormSetsAndSequences(remainingTiles, remainingSets)) {
-                    return true;
+                        if (isSameTile(t1, t2) && isSameTile(t2, t3)) {
+                            completeSets++;
+                            hand.remove(k);
+                            hand.remove(j);
+                            hand.remove(i);
+                            foundTriplet = true;
+                            break;
+                        }
+                    }
                 }
             }
+        } while (foundTriplet && hand.size() >= 3);
+
+        // 再找順子
+        boolean foundSequence;
+        do {
+            foundSequence = false;
+            // 每次找到順子後重新開始
+            outerLoop:
+            for (int i = 0; i < hand.size(); i++) {
+                Tile t1 = hand.get(i);
+                if (t1.getType() == Tile.TileType.DRAGON ||
+                        t1.getType() == Tile.TileType.WIND ||
+                        t1.getType() == Tile.TileType.FLOWER) {
+                    continue;
+                }
+
+                // 找第二張牌
+                for (int j = 0; j < hand.size(); j++) {
+                    if (i == j) continue;
+                    Tile t2 = hand.get(j);
+                    if (t2.getType() == t1.getType() &&
+                            t2.getNumber() == t1.getNumber() + 1) {
+                        // 找第三張牌
+                        for (int k = 0; k < hand.size(); k++) {
+                            if (k == i || k == j) continue;
+                            Tile t3 = hand.get(k);
+                            if (t3.getType() == t1.getType() &&
+                                    t3.getNumber() == t1.getNumber() + 2) {
+                                completeSets++;
+                                // 從大到小移除
+                                int max = Math.max(Math.max(i, j), k);
+                                int min = Math.min(Math.min(i, j), k);
+                                int mid = i + j + k - max - min;
+                                hand.remove(max);
+                                hand.remove(mid);
+                                hand.remove(min);
+                                foundSequence = true;
+                                break outerLoop;
+                            }
+                        }
+                    }
+                }
+            }
+        } while (foundSequence && hand.size() >= 3);
+
+        // 3. 找對子
+        boolean hasAPair = false;
+        if (hand.size() == 2) {
+            hasAPair = isSameTile(hand.get(0), hand.get(1));
         }
-        return false;
+
+        // 4. 判斷：有5組 + 1對就是胡牌
+        return completeSets == 5 && hasAPair;
     }
 
-    // 檢查兩張牌是否相同
     private boolean isSameTile(Tile t1, Tile t2) {
         return t1.getType() == t2.getType() && t1.getNumber() == t2.getNumber();
     }
