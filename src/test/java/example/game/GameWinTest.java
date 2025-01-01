@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 
-public class GameTest {
+public class GameWinTest {
 
     @Test
     public void testWinWithAllPongs() {
@@ -192,5 +192,144 @@ public class GameTest {
 
         Game game = new Game();
         assertFalse(game.checkWin(player));
+    }
+
+    @Test
+    public void testWinWithKong() {
+        // 測試有槓的胡牌
+        Player player = new Player("Test", true);
+
+        // 加入一個明槓
+        List<Tile> kong1 = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1)
+        );
+        player.getMelds().add(new Meld(MeldType.KONG, kong1));
+
+        // 加入一個暗槓
+        List<Tile> kong2 = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 2)
+        );
+        player.getMelds().add(new Meld(MeldType.CONCEALED_KONG, kong2));
+
+        // 加入一個碰
+        List<Tile> pong = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 3),
+                new Tile(Tile.TileType.WAN, 3),
+                new Tile(Tile.TileType.WAN, 3)
+        );
+        player.getMelds().add(new Meld(MeldType.PONG, pong));
+
+        // 手牌中加入2組
+        // 順子1: 456萬
+        player.addTile(new Tile(Tile.TileType.WAN, 4));
+        player.addTile(new Tile(Tile.TileType.WAN, 5));
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+
+        // 順子2: 789萬
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+
+        // 對子：中中
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
+    }
+
+    @Test
+    public void testWinWithEdgeCases() {
+        // 測試邊張順子的胡牌
+        Player player = new Player("Test", true);
+
+        // 123萬 (低邊)
+        player.addTile(new Tile(Tile.TileType.WAN, 1));
+        player.addTile(new Tile(Tile.TileType.WAN, 2));
+        player.addTile(new Tile(Tile.TileType.WAN, 3));
+
+        // 789萬 (高邊)
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+
+        // 兩個刻子
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 1));
+
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+
+        // 加入一個碰
+        List<Tile> pong = Arrays.asList(
+                new Tile(Tile.TileType.DRAGON, 3),
+                new Tile(Tile.TileType.DRAGON, 3),
+                new Tile(Tile.TileType.DRAGON, 3)
+        );
+        player.getMelds().add(new Meld(MeldType.PONG, pong));
+
+        // 對子：東東
+        player.addTile(new Tile(Tile.TileType.WIND, 1));
+        player.addTile(new Tile(Tile.TileType.WIND, 1));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
+    }
+
+    @Test
+    public void testWinWithComplexMixed() {
+        // 測試複雜混合型胡牌
+        Player player = new Player("Test", true);
+
+        // 加入一個明槓
+        List<Tile> kong = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1),
+                new Tile(Tile.TileType.WAN, 1)
+        );
+        player.getMelds().add(new Meld(MeldType.KONG, kong));
+
+        // 加入一個吃
+        List<Tile> chi = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 2),
+                new Tile(Tile.TileType.WAN, 3),
+                new Tile(Tile.TileType.WAN, 4)
+        );
+        player.getMelds().add(new Meld(MeldType.CHI, chi));
+
+        // 加入一個碰
+        List<Tile> pong = Arrays.asList(
+                new Tile(Tile.TileType.WAN, 5),
+                new Tile(Tile.TileType.WAN, 5),
+                new Tile(Tile.TileType.WAN, 5)
+        );
+        player.getMelds().add(new Meld(MeldType.PONG, pong));
+
+        // 手牌中的組合
+        // 順子: 678萬
+        player.addTile(new Tile(Tile.TileType.WAN, 6));
+        player.addTile(new Tile(Tile.TileType.WAN, 7));
+        player.addTile(new Tile(Tile.TileType.WAN, 8));
+
+        // 刻子: 999萬
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+        player.addTile(new Tile(Tile.TileType.WAN, 9));
+
+        // 對子：發發
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+        player.addTile(new Tile(Tile.TileType.DRAGON, 2));
+
+        Game game = new Game();
+        assertTrue(game.checkWin(player));
     }
 }
