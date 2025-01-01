@@ -164,7 +164,6 @@ public class Game {
         }
     }
 
-    // 檢查其他玩家是否可以吃碰槓
     private void checkResponses() {
         if (lastDiscardedTile == null) return;
         currentState = GameState.RESPONDING;
@@ -178,7 +177,11 @@ public class Game {
             player.addTile(lastDiscardedTile);
             if (checkWin(player)) {
                 if (player.isHuman()) {
-                    System.out.println("You can win! Enter 'W' to win, or any other key to skip");
+                    // 顯示當前手牌
+                    System.out.println("\nYour current hand:");
+                    System.out.println(player.getHandString());
+                    System.out.println("\nDiscarded tile: " + lastDiscardedTile);
+                    System.out.println("\nYou can win! Enter 'W' to win, or any other key to skip");
                     player.getHand().remove(player.getHand().size() - 1);
                     return;
                 } else {
@@ -209,16 +212,55 @@ public class Game {
                 if (playerIndex == (lastDiscardedByIndex + 1) % 4) {
                     List<List<Integer>> chiOptions = player.getChiOptions(lastDiscardedTile);
                     for (int j = 0; j < chiOptions.size(); j++) {
-                        options.add("C" + j + " - Chi Option " + j + " (吃)");
+                        // 獲取當前吃牌組合的牌
+                        List<Integer> indices = chiOptions.get(j);
+                        List<Tile> chiTiles = indices.stream()
+                                .map(idx -> player.getHand().get(idx))
+                                .collect(java.util.stream.Collectors.toList());
+
+                        // 根據當前打出的牌，重組完整的吃牌組合
+                        List<Tile> fullCombination = new ArrayList<>();
+                        for (Tile tile : chiTiles) {
+                            fullCombination.add(tile);
+                        }
+                        // 找到正確的位置插入打出的牌
+                        int insertPos = 0;
+                        for (int k = 0; k < 2; k++) {
+                            if (fullCombination.get(k).getNumber() + 1 == lastDiscardedTile.getNumber()) {
+                                insertPos = k + 1;
+                                break;
+                            } else if (fullCombination.get(k).getNumber() - 2 == lastDiscardedTile.getNumber()) {
+                                insertPos = 0;
+                                break;
+                            } else if (fullCombination.get(k).getNumber() - 1 == lastDiscardedTile.getNumber()) {
+                                insertPos = k;
+                                break;
+                            }
+                        }
+                        fullCombination.add(insertPos, lastDiscardedTile);
+
+                        // 生成可讀性更好的選項描述
+                        String optionDesc = String.format("C%d - Chi: %s %s %s (吃)",
+                                j,
+                                fullCombination.get(0),
+                                fullCombination.get(1),
+                                fullCombination.get(2));
+                        options.add(optionDesc);
                     }
                 }
 
                 if (!options.isEmpty()) {
-                    System.out.println("Available actions:");
+                    // 先顯示當前手牌
+                    System.out.println("\nYour current hand:");
+                    System.out.println(player.getHandString());
+                    // 顯示打出的牌
+                    System.out.println("\nDiscarded tile: " + lastDiscardedTile);
+                    // 顯示可用選項
+                    System.out.println("\nAvailable actions:");
                     for (String option : options) {
                         System.out.println(option);
                     }
-                    System.out.println("Enter your choice, or any other key to skip");
+                    System.out.println("\nEnter your choice, or any other key to skip");
                     return;
                 }
             } else {
