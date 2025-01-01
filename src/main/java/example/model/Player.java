@@ -72,6 +72,7 @@ public class Player {
 
     // 吃牌判定
     public List<List<Integer>> getChiOptions(Tile tile) {
+        // 基本檢查保持不變
         if (tile.getType() == Tile.TileType.WIND ||
                 tile.getType() == Tile.TileType.DRAGON ||
                 tile.getType() == Tile.TileType.FLOWER) {
@@ -89,53 +90,42 @@ public class Player {
             }
         }
 
-        // 檢查三種可能的吃牌方式
-        // 例如：打出3，檢查手上是否有 [1,2] 或 [2,4] 或 [4,5]
         int n = tile.getNumber();
 
-        // n在最後的情況 如：[n-2, n-1, n]
-        if (n >= 3) {
-            List<Integer> indices = new ArrayList<>();
-            boolean found = true;
-            for (int i = n - 2; i <= n - 1; i++) {
-                if (!numberIndices.containsKey(i)) {
-                    found = false;
-                    break;
-                }
-                indices.add(numberIndices.get(i).get(0));
-            }
-            if (found) options.add(indices);
-        }
-
-        // n在中間的情況 如：[n-1, n, n+1]
-        if (n >= 2 && n <= 8) {
-            List<Integer> indices = new ArrayList<>();
-            boolean found = true;
-            if (!numberIndices.containsKey(n-1) || !numberIndices.containsKey(n+1)) {
-                found = false;
-            }
-            if (found) {
-                indices.add(numberIndices.get(n-1).get(0));
-                indices.add(numberIndices.get(n+1).get(0));
-                options.add(indices);
-            }
-        }
-
-        // n在最前的情況 如：[n, n+1, n+2]
-        if (n <= 7) {
-            List<Integer> indices = new ArrayList<>();
-            boolean found = true;
-            for (int i = n + 1; i <= n + 2; i++) {
-                if (!numberIndices.containsKey(i)) {
-                    found = false;
-                    break;
-                }
-                indices.add(numberIndices.get(i).get(0));
-            }
-            if (found) options.add(indices);
-        }
+        // 使用輔助方法檢查三種吃牌情況
+        checkSequence(n - 2, n - 1, numberIndices, options);  // 後吃
+        checkMiddleSequence(n - 1, n + 1, numberIndices, options);  // 中吃
+        checkSequence(n + 1, n + 2, numberIndices, options);  // 前吃
 
         return options;
+    }
+
+    // 輔助方法：檢查連續的兩張牌
+    private void checkSequence(int start, int end, Map<Integer, List<Integer>> numberIndices,
+                               List<List<Integer>> options) {
+        // 檢查範圍有效性
+        if (start < 1 || end > 9) return;
+
+        List<Integer> seqIndices = new ArrayList<>();
+        for (int i = start; i <= end; i++) {
+            if (!numberIndices.containsKey(i)) return;
+            seqIndices.add(numberIndices.get(i).get(0));
+        }
+        options.add(seqIndices);
+    }
+
+    // 輔助方法：檢查中間吃的情況
+    private void checkMiddleSequence(int before, int after, Map<Integer, List<Integer>> numberIndices,
+                                     List<List<Integer>> options) {
+        // 檢查範圍有效性
+        if (before < 1 || after > 9) return;
+
+        if (numberIndices.containsKey(before) && numberIndices.containsKey(after)) {
+            List<Integer> middleIndices = new ArrayList<>();
+            middleIndices.add(numberIndices.get(before).get(0));
+            middleIndices.add(numberIndices.get(after).get(0));
+            options.add(middleIndices);
+        }
     }
 
     // 碰牌判定
