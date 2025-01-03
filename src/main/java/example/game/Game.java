@@ -115,8 +115,9 @@ public class Game {
         }
 
         if (wall.isEmpty()) {
+            endType = EndType.DRAW;  // 設置結束類型為流局
             currentState = GameState.FINISHED;
-            System.out.println("Game Over - No more tiles!");
+            displayFinalState();  // 調用顯示最終狀態
             return;
         }
 
@@ -309,6 +310,10 @@ public class Game {
 
     // 執行吃牌
     public void executeChi(Player player, List<Integer> indices) {
+        // 先從最後打牌玩家的打出牌堆中移除這張牌
+        Player lastDiscarder = players[lastDiscardedByIndex];
+        lastDiscarder.getDiscarded().remove(lastDiscarder.getDiscarded().size() - 1);
+
         player.chi(lastDiscardedTile, indices);
         currentPlayerIndex = getPlayerIndex(player);
         currentState = GameState.DISCARDING;
@@ -324,9 +329,13 @@ public class Game {
             checkResponses();
         }
     }
-
     // 執行碰牌
     public void executePong(Player player, List<Integer> indices) {
+        // 先從最後打牌玩家的打出牌堆中移除這張牌
+        Player lastDiscarder = players[lastDiscardedByIndex];
+        lastDiscarder.getDiscarded().remove(lastDiscarder.getDiscarded().size() - 1);
+
+        // 執行原本的碰牌邏輯
         player.pong(lastDiscardedTile, indices);
         currentPlayerIndex = getPlayerIndex(player);
         currentState = GameState.DISCARDING;
@@ -344,7 +353,12 @@ public class Game {
     }
 
     // 執行槓牌
+// 執行槓牌
     public void executeKong(Player player, List<Integer> indices) {
+        // 先從最後打牌玩家的打出牌堆中移除這張牌
+        Player lastDiscarder = players[lastDiscardedByIndex];
+        lastDiscarder.getDiscarded().remove(lastDiscarder.getDiscarded().size() - 1);
+
         player.kong(lastDiscardedTile, indices);
         currentPlayerIndex = getPlayerIndex(player);
 
@@ -677,6 +691,7 @@ public class Game {
         winner = player;
         endType = EndType.WIN;
         currentState = GameState.FINISHED;
+        displayFinalState();
     }
 
     // 檢查遊戲是否結束
@@ -690,7 +705,134 @@ public class Game {
         if (wall.isEmpty()) {
             endType = EndType.DRAW;
             currentState = GameState.FINISHED;
+            displayFinalState();
         }
+    }
+
+    // 顯示最終狀態
+    private void displayFinalState() {
+        System.out.println("\n=== Game Over ===");
+        if (endType == EndType.WIN) {
+            System.out.println("Winner: " + winner.getName());
+        } else {
+            System.out.println("Game ended in a draw (流局)");
+        }
+
+        checkTotalTiles();
+
+        System.out.println("\n=== Final State for Each Player ===");
+        for (Player player : players) {
+            System.out.println("\n" + player.getName() + ":");
+            System.out.println("Hand: " + player.getHandString());
+            System.out.println("Flowers: " + player.getFlowers());
+            System.out.println("Melds: " + player.getMelds());
+            System.out.println("Discarded: " + player.getDiscarded());
+        }
+
+        System.out.println("\nRemaining tiles in wall: " + wall.size());
+        System.out.println("===============================");
+    }
+
+    // 檢查牌的總數是否正確
+    private void checkTotalTiles() {
+        Map<String, Integer> tileCount = new HashMap<>();
+        int totalCount = 0;
+
+        // 計算牌山中的牌
+        for (Tile tile : wall) {
+            String key = tile.getType() + "-" + tile.getNumber();
+            tileCount.put(key, tileCount.getOrDefault(key, 0) + 1);
+            totalCount++;
+        }
+
+        // 計算所有玩家的牌（手牌、鳴牌組、打出的牌、花牌）
+        for (Player player : players) {
+            // 計算手牌
+            for (Tile tile : player.getHand()) {
+                String key = tile.getType() + "-" + tile.getNumber();
+                tileCount.put(key, tileCount.getOrDefault(key, 0) + 1);
+                totalCount++;
+            }
+
+            // 計算花牌
+            for (Tile tile : player.getFlowers()) {
+                String key = tile.getType() + "-" + tile.getNumber();
+                tileCount.put(key, tileCount.getOrDefault(key, 0) + 1);
+                totalCount++;
+            }
+
+            // 計算打出的牌
+            for (Tile tile : player.getDiscarded()) {
+                String key = tile.getType() + "-" + tile.getNumber();
+                tileCount.put(key, tileCount.getOrDefault(key, 0) + 1);
+                totalCount++;
+            }
+
+            // 計算鳴牌組
+            for (Meld meld : player.getMelds()) {
+                for (Tile tile : meld.getTiles()) {
+                    String key = tile.getType() + "-" + tile.getNumber();
+                    tileCount.put(key, tileCount.getOrDefault(key, 0) + 1);
+                    totalCount++;
+                }
+            }
+        }
+
+        // 檢查並輸出問題
+        System.out.println("\n=== Tile Count Check ===");
+        System.out.println("Total tiles: " + totalCount + " (should be 144)");
+
+        for (Map.Entry<String, Integer> entry : tileCount.entrySet()) {
+            String[] parts = entry.getKey().split("-");
+            Tile.TileType type = Tile.TileType.valueOf(parts[0]);
+            int number = Integer.parseInt(parts[1]);
+            int count = entry.getValue();
+
+            // 檢查基本牌是否超過4張
+            if (type != Tile.TileType.FLOWER && count > 4) {
+                System.out.println("Error: " + getTileName(type, number) +
+                        " appears " + count + " times (should be <= 4)");
+            }
+            // 檢查花牌是否超過1張
+            else if (type == Tile.TileType.FLOWER && count > 1) {
+                System.out.println("Error: " + getTileName(type, number) +
+                        " appears " + count + " times (should be 1)");
+            }
+        }
+        System.out.println("======================");
+    }
+
+    // 輔助方法：獲取牌的中文名稱
+    private String getTileName(Tile.TileType type, int number) {
+        if (type == Tile.TileType.WIND) {
+            return switch (number) {
+                case 1 -> "東";
+                case 2 -> "南";
+                case 3 -> "西";
+                case 4 -> "北";
+                default -> "未知風牌";
+            };
+        } else if (type == Tile.TileType.DRAGON) {
+            return switch (number) {
+                case 1 -> "中";
+                case 2 -> "發";
+                case 3 -> "白";
+                default -> "未知字牌";
+            };
+        } else if (type == Tile.TileType.FLOWER) {
+            return switch (number) {
+                case 1 -> "春";
+                case 2 -> "夏";
+                case 3 -> "秋";
+                case 4 -> "冬";
+                case 5 -> "梅";
+                case 6 -> "蘭";
+                case 7 -> "菊";
+                case 8 -> "竹";
+                default -> "未知花牌";
+            };
+        }
+        return number + type.getChinese();
     }
 
     // 測試用main方法
